@@ -354,14 +354,16 @@ char *copy_string_from_lua_stack(lua_State *lua) {
 static void luaReplyToServerReply(ValkeyModuleCtx *ctx, int resp_version, lua_State *lua) {
     int t = lua_type(lua, -1);
 
-#ifdef __EMSCRIPTEN__
-    /* The engine's call stack limit is reached long before Lua's
-     * LUAI_MAXCSTACK (8000 slots) lets lua_checkstack() fail, and a wasm
-     * stack overflow is an uncatchable trap. Bound the recursion instead. */
+#ifndef LUA_REPLY_MAX_DEPTH
+#define LUA_REPLY_MAX_DEPTH 0
+#endif
+#if LUA_REPLY_MAX_DEPTH > 0
+    /* Optional compile-time cap on table nesting in a script reply, for
+     * builds whose native stack runs out before Lua's LUAI_MAXCSTACK (8000)
+     * makes lua_checkstack() fail (e.g. WebAssembly, where a stack overflow
+     * is an uncatchable trap). 0 (default) means no extra cap.
+     * Scripts run one at a time under the GIL, so a plain static is safe. */
     static int depth = 0;
-    enum {
-        LUA_REPLY_MAX_DEPTH = 256
-    };
     if (depth >= LUA_REPLY_MAX_DEPTH) {
         ValkeyModule_ReplyWithError(ctx, "ERR reached lua stack limit");
         lua_pop(lua, 1);

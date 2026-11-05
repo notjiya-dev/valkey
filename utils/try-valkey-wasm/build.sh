@@ -32,7 +32,7 @@ if [[ "${1:-}" == "clean" ]]; then
 fi
 
 # Common compile flags. -D__TRY_VALKEY_WASM__ gates spike-only code.
-CFLAGS_COMMON="$ARCH_FLAGS -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument"
+CFLAGS_COMMON="$ARCH_FLAGS -DLUA_REPLY_MAX_DEPTH=${LUA_REPLY_MAX_DEPTH:-256} -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-command-line-argument"
 
 # Link flags: keep the runtime alive after main() returns, export the driver
 # API, allow the heap to grow, and export the module as an ES6 factory.
